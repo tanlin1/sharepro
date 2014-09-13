@@ -36,8 +36,6 @@ import java.util.Locale;
  * Created by Administrator on 2014/8/18.
  */
 public class CameraActivity extends Activity {
-	//
-	private ArrayList<Bitmap> bitmaps;// = ImageLoader.bitmapArray;
 
 	private static final int CAMERA_ASK = 1000;
 	private static final int PICTURE_ASK = 1001;
@@ -47,10 +45,10 @@ public class CameraActivity extends Activity {
 
 	private Button post;
 	private Button beauty;
-	private String photoPath;
-	private ImageLoader imageLoader;
 
-	ArrayList<String> imageUris;
+	private GridAdapter gridAdapter;
+
+	private ArrayList<String> imageUris;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -58,14 +56,11 @@ public class CameraActivity extends Activity {
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		//getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 		setContentView(R.layout.camera_layout);
-		imageLoader = Index.imageLoader;
+
+
+		//判断将要执行什么操作
 		String select = getIntent().getStringExtra("what");
-
-
-		imageUris = ImageLoader.pathList;
-		gridAdapter = new GridAdapter(this, imageUris);
-
-
+		//拍照
 		if (select.equals("camera")) {
 			//以日期命名jpg格式
 			photoName = DateFormat.format("yyyy-MM-dd-hh-mm-ss",
@@ -102,7 +97,9 @@ public class CameraActivity extends Activity {
 					e.printStackTrace();
 				}
 			}
+
 		} else if (select.equals("picture")) {
+			//选择图片上传
 			handleSendMultipleImages();
 		}
 	}
@@ -110,7 +107,7 @@ public class CameraActivity extends Activity {
 	@Override
 	protected void onActivityResult(final int requestCode, final int resultCode, Intent data) {
 		super.onActivityResult(requestCode, resultCode, data);
-		String path = null;
+		String path = "";
 		Bitmap bitmap;
 		post = (Button) findViewById(R.id.camera_button_photo_direct_post);
 		beauty = (Button) findViewById(R.id.camera_button_handle_photo);
@@ -124,7 +121,6 @@ public class CameraActivity extends Activity {
 		}
 		if (resultCode == Activity.RESULT_OK && requestCode == PICTURE_ASK) {
 			sendMessage("selected", "yes");
-			//path = getImagePath(data);
 		}
 		final String finalPath = path;
 		post.setOnClickListener(new View.OnClickListener() {
@@ -153,18 +149,15 @@ public class CameraActivity extends Activity {
 	/**
 	 * 用GridView显示多张图片
 	 */
-	public static GridAdapter gridAdapter;
-
 	private void handleSendMultipleImages() {
+		imageUris = ImageLoader.pathList;
 
 		if (imageUris != null) {
-
+			gridAdapter = new GridAdapter(this, imageUris);
 			final View v = View.inflate(this, R.layout.multyimage, null);
 			GridView gridView = (GridView) v.findViewById(R.id.gridView);
 			gridView.setPadding(0, 2, 0, 0);
-			//gridView.setNumColumns(GridView.AUTO_FIT);
 
-			System.out.println(gridAdapter);
 			gridView.setAdapter(gridAdapter);
 			setContentView(v);
 
@@ -173,20 +166,31 @@ public class CameraActivity extends Activity {
 				public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 					System.out.println(position + "被点击" + view.getId());
 					view.setBackgroundColor(Color.BLUE);
-					gridAdapter.notifyDataSetChanged();
 				}
 			});
 
 			gridView.setOnScrollListener(new AbsListView.OnScrollListener() {
-				HashMap<String, Integer> map = new HashMap<String, Integer>();
-
 				@Override
 				public void onScrollStateChanged(AbsListView view, int scrollState) {
 					switch (scrollState) {
 						// 当不滚动时（仅当屏幕没有滑动的时候才加载图片）
 						case AbsListView.OnScrollListener.SCROLL_STATE_IDLE:
 							// 滚动到显示区域底部
-							gridAdapter.notifyDataSetChanged();
+							onStop = true;
+							try {
+								HashMap hashMap = new HashMap<String, Integer>();
+								hashMap.put("start", start - 12);
+								hashMap.put("end", end + 12);
+								if (ImageLoader.FlagQueue.peek() == null) {
+									System.out.println("put end ----------------------" + view.getLastVisiblePosition());
+									ImageLoader.FlagQueue.put(hashMap);
+								}
+								sendMessage("notify", "yes");
+							} catch (InterruptedException e) {
+								e.printStackTrace();
+							}
+
+
 							// 滑动至底部
 							if (view.getLastVisiblePosition() == (view.getCount() - 1)) {
 								System.out.println("滚动至底部，可以do something");
@@ -194,10 +198,12 @@ public class CameraActivity extends Activity {
 							break;
 						// 滑动中(不加载图片)
 						case AbsListView.OnScrollListener.SCROLL_STATE_FLING:
+							onStop = false;
 							break;
 						// 手指在屏幕上（不加载图片）
 						case AbsListView.OnScrollListener.SCROLL_STATE_TOUCH_SCROLL:
-							//gridAdapter.notifyDataSetChanged();
+							onStop = true;
+							sendMessage("notify", "yes");
 							break;
 					}
 				}
@@ -205,10 +211,18 @@ public class CameraActivity extends Activity {
 				@Override
 				public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
 					//gridAdapter.notifyDataSetChanged();
+					start = firstVisibleItem;
+					end = start + visibleItemCount;
+					onStop = false;
 				}
 			});
 		}
 	}
+
+	int start = 0;
+	int end = 0;
+
+	boolean onStop = true;
 
 	/**
 	 * 重写BaseAdapter
@@ -240,49 +254,41 @@ public class CameraActivity extends Activity {
 
 		@Override
 		public View getView(int position, View convertView, ViewGroup parent) {
-			Bitmap bitmap;
-			View view;
+
+			View view = convertView;
+			if (convertView == null) {
+
+				view = View.inflate(mContext, R.layout.items, null);
+			}
 			ImageView image;
-
-			view = View.inflate(mContext, R.layout.items, null);
-
 			image = (ImageView) view.findViewById(R.id.image);
 			image.setMinimumHeight(Index.width);
 			image.setMinimumWidth(Index.width);
 			image.setPadding(Index.base, 2, Index.base, 2);
 
-			bitmap = ImageLoader.bitmaps[position];
-
-//			new FadeInBitmapDisplayer(10) {
-//				@Override
-//				public Bitmap display(Bitmap bitmap, ImageView imageView) {
-//
-//					return bitmap;
-//				}
-//
-//			}.display(bitmap,image);
-			image.setImageBitmap(bitmap);
-			System.out.println("------------  " + position + " ----------------- ok!   ");
-
-			//image.setImageBitmap(bitmap);
-//			//添加至map里面
-
-			if(position == 11){
-				sendMessage("notify","yes");
+			if (onStop) {
+				image.setImageBitmap(ImageLoader.hashBitmaps.get(position));
+				System.out.println("------------  " + position + " ----------------- ok!   ");
+				if (position == 11 && firstIn) {
+					firstIn = false;
+					sendMessage("notify", "yes");
+					//notifyDataSetChanged();
+				}
 			}
+
 			return view;
 		}
 	}
+
+	boolean firstIn = true;
+
 
 	private Handler handler = new Handler() {
 		@Override
 		public void handleMessage(Message msg) {
 			Bundle data = msg.getData();
-			if ("yes".equals(data.getString("show"))) {
-				Bitmap bm = BitmapFactory.decodeFile(photoPath);
-				((ImageView) findViewById(R.id.camera_photo_scanning)).setImageBitmap(bm);
-			}
-			if("yes".equals(data.getString("notify"))){
+			if ("yes".equals(data.getString("notify"))) {
+				//data.clear();
 				gridAdapter.notifyDataSetChanged();
 			}
 		}

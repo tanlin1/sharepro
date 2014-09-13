@@ -3,12 +3,15 @@ package utils;
 import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.provider.MediaStore;
-import android.widget.BaseAdapter;
 import com.example.moment.Index;
 import utils.android.photo.ImageCompressUtil;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 /**
  * Created by Administrator on 2014/9/8.
@@ -16,11 +19,9 @@ import java.util.ArrayList;
 public class ImageLoader {
 
 	//public static BlockingQueue<Integer> FlagQueue = new ArrayBlockingQueue<Integer>(1);
-	//public static BlockingQueue<HashMap<String, Integer>> FlagQueue = new ArrayBlockingQueue<HashMap<String, Integer>>(1);
-	public static Bitmap[] bitmaps;// = new ArrayList<Bitmap>();
-
+	public static BlockingQueue<HashMap<String, Integer>> FlagQueue = new ArrayBlockingQueue<HashMap<String, Integer>>(2);
 	public static ArrayList<String> pathList = new ArrayList<String>();
-
+	public static HashMap<Integer, Bitmap> hashBitmaps;// = new HashMap<Integer, Bitmap>();
 
 	private boolean allowLoad = true; //初始化允许加载图片（进入界面，用户并没有滑动）
 	private Context context;
@@ -52,27 +53,65 @@ public class ImageLoader {
 	 * 此状态可以加载图片
 	 */
 	public void enable() {
-
+		HashMap<String, Integer> map = new HashMap<String, Integer>();
+		map.put("start", 0);
+		map.put("end", 20);
+		FlagQueue.add(map);
 		getSimpleImagePath(context);
-		bitmaps = new Bitmap[listSize];
+		hashBitmaps = new HashMap<Integer, Bitmap>();
+		System.out.println(listSize + "---------------------------------------");
 		new LoadImageThread().start();
 	}
 
-	BaseAdapter gtest;
-
 	private class LoadImageThread extends Thread {
+		String path;
+		int start = 0;
+		int end = 0;
+		HashMap<String, Integer> hashMap;
 
 		@Override
 		public void run() {
-			Bitmap bitmap;
-			String path;
-			for (int i = 0; i < listSize; i++) {
-				path = pathList.get(i);
-				bitmap = ImageCompressUtil.compressByQuality(path, 100);
+			hashMap = new HashMap<String, Integer>();
+			while (true) {
+				try {
+					hashMap = FlagQueue.take();
+					start = hashMap.get("start");
+					end = hashMap.get("end");
+					if(start < 0){
+						start = 0;
+					}
+					if(end > listSize){
+						end = listSize;
+					}
+					for (int i = start; i < listSize && i < end; i++) {
 
-				bitmaps[i] = ImageCompressUtil.zoomImage(bitmap, Index.width, Index.width);
+						path = pathList.get(i);
+						//此map中如果不存在key，则向其中添加键值对（路径，图片）
+						if (!hashBitmaps.containsKey(i)) {
+							System.out.println("------------------  线程将第  " + i + "存入 map 中");
+							hashBitmaps.put(i, ImageCompressUtil.zoomImage(
+									BitmapFactory.decodeFile(path), Index.width, Index.width));
+						}
+					}
+					if (hashBitmaps.size() > 50) {
+						System.out.println("--------------线程清除数据中 -- - --" + "start: " + start + "end" + end);
+						for(int i = 0; i <= start - 40 ; i++){
+							if (hashBitmaps.containsKey(i)) {
+								System.out.println("----start---------------  线程将第  " + i + "从 map 中 丢弃");
+								hashBitmaps.remove(i);
+							}
+						}
+						for(int j = end; j >= end - 10 && j < listSize; j--){
+							if (hashBitmaps.containsKey(j)) {
+								System.out.println("-----end-----------------  线程将第  " + j + "从 map 中 丢弃");
+								hashBitmaps.remove(j);
+							}
+						}
+					}
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 			}
-
 		}
 	}
 

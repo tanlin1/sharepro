@@ -143,8 +143,9 @@ public class Index extends Activity {
 			//打开图库
 			open.putExtra("what", "picture");
 		}
-		startActivity(open);
+		//开启线程（读取图片）
 		imageLoader.enable();
+		startActivity(open);
 	}
 	//主界面的按钮触发
 	private class MyOnClickListener implements View.OnClickListener {

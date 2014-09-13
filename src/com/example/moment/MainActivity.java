@@ -9,10 +9,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.Settings;
-import android.view.KeyEvent;
-import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
+import android.view.*;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.*;
 import utils.android.Read;
@@ -46,24 +43,34 @@ public class MainActivity extends Activity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
+		//全屏模式，无标题
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
+		//得到屏幕的尺寸，方便后续使用
 		WindowManager vm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
 		screenWidth = vm.getDefaultDisplay().getWidth();
 		screenHeight = vm.getDefaultDisplay().getHeight();
 
+		//当前Activity 是哪一个布局文件，以何种方式显示
 		setContentView(R.layout.main);
 		//检查网络
 		//checkInternet(this);
-		View imageView = findViewById(R.id.MainView);
+
+		//依次找到布局中的各个控件，并为之设置监听器，便于处理
+		ImageView imageView = (ImageView) findViewById(R.id.MainView);
+		imageView.setLayoutParams(new LinearLayout.LayoutParams(screenWidth,screenHeight*2/3));
 		imageView.setBackgroundDrawable(getWallpaper().getCurrent());
 
+		//登录（注册）按钮
 		Button login = (Button) findViewById(R.id.button_login);
 		Button register = (Button) findViewById(R.id.button_register);
+
+		//登录填写的邮箱，密码编辑框
 		emailEdit = (EditText) findViewById(R.id.set_name);
 		passwordEdit = (EditText) findViewById(R.id.set_password);
 
+		//记住密码
 		CheckBox checkBox = (CheckBox) findViewById(R.id.checkbox);
 		TextView toFindPassword = (TextView) findViewById(R.id.find_password);
 
@@ -131,10 +138,13 @@ public class MainActivity extends Activity {
 		});
 	}
 
-//	String[] items = new String[]{"Beijing","Shanghai","Chongqing","Tianjin"};
-//	boolean[] itemsCheck = new boolean[items.length];
-
-	private void checkInternet(Context context) {
+	/**
+	 *
+	 * @param context 上下文
+	 * @return  true: 已经接入网络，不管是Internet 还是移动网络
+	 *          false: 当前没有网络连接
+	 */
+	private boolean checkInternet(Context context) {
 		if(!CheckInternetTool.checkInternet(context)){
 			AlertDialog.Builder dialog = new AlertDialog.Builder(MainActivity.this);
 
@@ -160,7 +170,9 @@ public class MainActivity extends Activity {
 //				}
 //			});
 			dialog.create().show();
+			return false;
 		}
+		return true;
 	}
 
 	//昵称编辑框焦点侦听
