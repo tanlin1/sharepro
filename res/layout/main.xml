@@ -33,6 +33,8 @@
 		          android:layout_marginTop="15dp"
 		          android:layout_toRightOf="@id/text_name"
 		          android:layout_marginLeft="10dp"
+		          android:layout_alignParentRight="true"
+		          android:layout_marginRight="30dp"
 				/>
 		<TextView
 				android:layout_width="wrap_content"
@@ -54,7 +56,7 @@
 		          android:layout_below="@id/set_name"
 		          android:layout_marginTop="14dp"
 		          android:layout_alignLeft="@id/set_name"
-				/>
+		          android:layout_alignRight="@+id/set_name"/>
 
 		<CheckBox android:layout_width="wrap_content"
 		          android:layout_height="wrap_content"
@@ -92,8 +94,6 @@
 				android:id="@+id/button_register"
 				android:textSize="20sp"
 				android:text="@string/button_register"
-				android:layout_toLeftOf="@id/button_login"
-				android:layout_marginRight="5dp"
 				android:background="@drawable/press"
 				android:layout_alignLeft="@id/set_password"
 				android:layout_alignBottom="@id/button_login"

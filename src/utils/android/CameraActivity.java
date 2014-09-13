@@ -18,7 +18,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.*;
-import com.example.moment.Index;
 import com.example.moment.R;
 import utils.ImageLoader;
 import utils.android.photo.UploadPhoto;
@@ -46,17 +45,19 @@ public class CameraActivity extends Activity {
 	private Button post;
 	private Button beauty;
 
-	private GridAdapter gridAdapter;
+	// 当前屏幕显示第一张图片，在整个GridView中的位置
+	private int start = 0;
+	// 屏幕所能显示的最后一张图片，在整个 GridView中的位置
+	private int end = 0;
 
-	private ArrayList<String> imageUris;
+	private static GridAdapter gridAdapter;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		// 无标题
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
-		//getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 		setContentView(R.layout.camera_layout);
-
 
 		//判断将要执行什么操作
 		String select = getIntent().getStringExtra("what");
@@ -65,22 +66,23 @@ public class CameraActivity extends Activity {
 			//以日期命名jpg格式
 			photoName = DateFormat.format("yyyy-MM-dd-hh-mm-ss",
 					Calendar.getInstance(Locale.CHINA)).toString() + ".jpg";
-
+			// SD 卡存在
 			if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-
+				//
 				StorageManager manager = (StorageManager) getSystemService(Context.STORAGE_SERVICE);
 				try {
+					// 利用反射， 调用系统（主机）有几张 SD 卡
 					Method methodMnt = manager.getClass().getMethod("getVolumePaths");
-
 					String[] path = (String[]) methodMnt.invoke(manager);
-
-					String filePath = path[0] + "/moment/photo/";
-					directory = new File(filePath);
+					// 在SD card0 （内置）中创建目录
+					directory = new File(path[0] + "/moment/photo/");
 					if (!directory.exists()) {
+						// 创建多级目录
 						directory.mkdirs();
 					}
 					File photo = new File(directory, photoName);
 
+					// 意图（调用相机）
 					Intent takePhoto = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 					takePhoto.addCategory(Intent.CATEGORY_DEFAULT);
 
@@ -122,17 +124,17 @@ public class CameraActivity extends Activity {
 		if (resultCode == Activity.RESULT_OK && requestCode == PICTURE_ASK) {
 			sendMessage("selected", "yes");
 		}
-		final String finalPath = path;
+		final String sendPath = path;
 		post.setOnClickListener(new View.OnClickListener() {
 			//点击上传原图，就开启上传线程
 			@Override
 			public void onClick(View v) {
 				Intent intent = new Intent(CameraActivity.this, UploadPhoto.class);
 				if (requestCode == CAMERA_ASK) {
-					intent.putExtra("photo_path", finalPath);
+					intent.putExtra("photo_path", sendPath);
 				}
 				if (requestCode == PICTURE_ASK) {
-					intent.putExtra("photo_path", finalPath);
+					intent.putExtra("photo_path", sendPath);
 				}
 				startActivity(intent);
 			}
@@ -150,14 +152,13 @@ public class CameraActivity extends Activity {
 	 * 用GridView显示多张图片
 	 */
 	private void handleSendMultipleImages() {
-		imageUris = ImageLoader.pathList;
-
+		ArrayList<String> imageUris = ImageLoader.list;
 		if (imageUris != null) {
 			gridAdapter = new GridAdapter(this, imageUris);
-			final View v = View.inflate(this, R.layout.multyimage, null);
+			View v = View.inflate(this, R.layout.multyimage, null);
 			GridView gridView = (GridView) v.findViewById(R.id.gridView);
 			gridView.setPadding(0, 2, 0, 0);
-
+			// 设置 适配器
 			gridView.setAdapter(gridAdapter);
 			setContentView(v);
 
@@ -168,7 +169,6 @@ public class CameraActivity extends Activity {
 					view.setBackgroundColor(Color.BLUE);
 				}
 			});
-
 			gridView.setOnScrollListener(new AbsListView.OnScrollListener() {
 				@Override
 				public void onScrollStateChanged(AbsListView view, int scrollState) {
@@ -176,20 +176,17 @@ public class CameraActivity extends Activity {
 						// 当不滚动时（仅当屏幕没有滑动的时候才加载图片）
 						case AbsListView.OnScrollListener.SCROLL_STATE_IDLE:
 							// 滚动到显示区域底部
-							onStop = true;
 							try {
-								HashMap hashMap = new HashMap<String, Integer>();
-								hashMap.put("start", start - 12);
-								hashMap.put("end", end + 12);
+								// 如果队列中为空，向碎裂中添加数据（新需加载的位置信息）
 								if (ImageLoader.FlagQueue.peek() == null) {
-									System.out.println("put end ----------------------" + view.getLastVisiblePosition());
+									HashMap<String,Integer> hashMap = new HashMap<String, Integer>();
+									hashMap.put("start", start - 7);
+									hashMap.put("end", end + 7);
 									ImageLoader.FlagQueue.put(hashMap);
 								}
-								sendMessage("notify", "yes");
 							} catch (InterruptedException e) {
 								e.printStackTrace();
 							}
-
 
 							// 滑动至底部
 							if (view.getLastVisiblePosition() == (view.getCount() - 1)) {
@@ -198,43 +195,35 @@ public class CameraActivity extends Activity {
 							break;
 						// 滑动中(不加载图片)
 						case AbsListView.OnScrollListener.SCROLL_STATE_FLING:
-							onStop = false;
 							break;
 						// 手指在屏幕上（不加载图片）
 						case AbsListView.OnScrollListener.SCROLL_STATE_TOUCH_SCROLL:
-							onStop = true;
-							sendMessage("notify", "yes");
 							break;
 					}
 				}
 
 				@Override
 				public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
-					//gridAdapter.notifyDataSetChanged();
 					start = firstVisibleItem;
 					end = start + visibleItemCount;
-					onStop = false;
 				}
-			});
+				});
 		}
 	}
-
-	int start = 0;
-	int end = 0;
-
-	boolean onStop = true;
 
 	/**
 	 * 重写BaseAdapter
 	 */
+	private class GridAdapter extends BaseAdapter {
 
-	public class GridAdapter extends BaseAdapter {
-		private Context mContext;
+		private int width = ImageLoader.photoEachWidth;
+
+		private Context context;
 		private ArrayList<String> photoPathList;
 
-		public GridAdapter(Context Context, ArrayList<String> list) {
+		public GridAdapter(Context context, ArrayList<String> list) {
 			photoPathList = list;
-			this.mContext = Context;
+			this.context = context;
 		}
 
 		@Override
@@ -255,46 +244,33 @@ public class CameraActivity extends Activity {
 		@Override
 		public View getView(int position, View convertView, ViewGroup parent) {
 
-			View view = convertView;
-			if (convertView == null) {
-
-				view = View.inflate(mContext, R.layout.items, null);
-			}
+			View view;
 			ImageView image;
-			image = (ImageView) view.findViewById(R.id.image);
-			image.setMinimumHeight(Index.width);
-			image.setMinimumWidth(Index.width);
-			image.setPadding(Index.base, 2, Index.base, 2);
+			view = View.inflate(context, R.layout.items, null);
 
-			if (onStop) {
-				image.setImageBitmap(ImageLoader.hashBitmaps.get(position));
-				System.out.println("------------  " + position + " ----------------- ok!   ");
-				if (position == 11 && firstIn) {
-					firstIn = false;
-					sendMessage("notify", "yes");
-					//notifyDataSetChanged();
-				}
-			}
+			image = (ImageView) view.findViewById(R.id.image);
+			image.setMinimumHeight(width);
+			image.setMinimumWidth(width);
+			image.setPadding(3, 2, 3, 2);
+
+			image.setImageBitmap(ImageLoader.hashBitmaps.get(position));
 
 			return view;
 		}
 	}
 
-	boolean firstIn = true;
-
-
-	private Handler handler = new Handler() {
+	private static Handler handler = new Handler() {
 		@Override
 		public void handleMessage(Message msg) {
 			Bundle data = msg.getData();
 			if ("yes".equals(data.getString("notify"))) {
-				//data.clear();
+				data.clear();
 				gridAdapter.notifyDataSetChanged();
 			}
 		}
 	};
 
-	private void sendMessage(String key, String value) {
+	public static void sendMessage(String key, String value) {
 		Bundle data = new Bundle();
 		Message msg = new Message();
 		data.putString(key, value);
