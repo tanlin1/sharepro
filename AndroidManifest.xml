@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          package="com.example.moment"
+          android:versionCode="1"
+          android:versionName="1.0">
+
+	<uses-sdk android:minSdkVersion="14"/>
+	<application
+			android:label="@string/app_name"
+			android:icon="@drawable/ic_launcher">
+		<activity
+				android:name=".MainActivity"
+				android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
+				android:launchMode="singleTask"
+				>
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN"/>
+				<category android:name="android.intent.category.LAUNCHER"/>
+			</intent-filter>
+		</activity>
+
+		<activity
+				android:name=".RegisterActivity"
+				android:launchMode="singleTask"
+				>
+			<intent-filter android:label="what is it?">
+				<action android:name="android.intent.action.send"/>
+				<data android:scheme="who is it?"/>
+
+			</intent-filter>
+		</activity>
+
+		<activity
+				android:name=".Index"
+				android:theme="@android:style/Animation.Dialog"
+				android:launchMode="singleTask"
+				>
+			<intent-filter android:label="Login">
+				<action android:name="android.intent.action.SEND"/>
+				<category android:name="android.intent.category.DEFAULT"/>
+				<data android:mimeType="*/*"/>
+			</intent-filter>
+
+		</activity>
+		<activity
+				android:name=".UserHome"
+				android:launchMode="singleTask"
+				>
+			<intent-filter android:label="test">
+			</intent-filter>
+		</activity>
+
+		<activity
+				android:name=".HotActivity"
+				android:launchMode="singleTask"
+				>
+			<intent-filter android:label="@string/share_photo">
+				<action android:name="notice"/>
+				<category android:name="android.intent.category.DEFAULT"/>
+				<!--<data android:mimeType="image/*"/>-->
+			</intent-filter>
+		</activity>
+		<activity
+				android:name="utils.android.CameraActivity"
+				android:configChanges="orientation|keyboardHidden"
+				android:launchMode="singleTask"
+				>
+			<intent-filter>
+				<!--加上这段代码，可以实现隐式调用-->
+				<category android:name="android.intent.category.DEFAULT"/>
+			</intent-filter>
+		</activity>
+
+		<activity
+				android:name="utils.android.PictureSelect"
+				android:configChanges="orientation|keyboardHidden"
+				android:launchMode="singleTask"
+				>
+			<intent-filter>
+				<!--加上这段代码，可以实现隐式调用-->
+				<category android:name="android.intent.category.DEFAULT"/>
+			</intent-filter>
+		</activity>
+
+		<activity
+				android:name="utils.android.photo.UploadPhoto"
+				android:configChanges="keyboard"
+				android:launchMode="singleTask"
+				>
+			<intent-filter>
+				<category android:name="android.intent.category.DEFAULT"/>
+			</intent-filter>
+		</activity>
+
+	</application>
+	<!--权限申请-->
+	<uses-permission android:name="android.permission.INTERNET"/>
+	<uses-permission android:name="android.permission.CAMERA"/>
+	<uses-permission android:name="android.permission.READ_CONTACTS"/>
+	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+	<!--外置内存卡权限-->
+	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+	<uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS"/>
+	<!--位置信息-->
+	<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+	<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+</manifest>

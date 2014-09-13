@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical"
+              android:background="@android:color/white"
+		>
+
+	<RelativeLayout
+			android:layout_width="fill_parent"
+			android:layout_height="45dp"
+			android:orientation="horizontal"
+			android:background="@android:color/holo_blue_bright"
+			>
+
+		<ImageButton
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+
+				android:src="@drawable/left_48"
+				android:layout_alignParentLeft="true"
+				android:layout_marginLeft="6dp"
+				android:layout_centerVertical="true"
+				android:background="@android:color/holo_blue_bright"
+				/>
+
+		<TextView
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_centerInParent="true"
+				android:text="确认添加图片"
+				android:textSize="20sp"
+				android:textColor="@android:color/white"
+				/>
+
+		<ImageButton
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:src="@drawable/upload"
+				android:layout_alignParentRight="true"
+				android:layout_marginRight="6dp"
+				android:layout_centerVertical="true"
+				android:background="@android:color/holo_blue_bright"
+				/>
+	</RelativeLayout>
+
+	<GridView
+			android:layout_width="fill_parent"
+			android:layout_height="400dp"
+			android:layout_marginLeft="5dp"
+			android:id="@+id/gridView"
+
+			android:layout_marginBottom="40dp"
+			android:numColumns="3"
+	        android:scrollbars="none"
+			>
+	</GridView>
+
+	<Button
+			android:layout_width="fill_parent"
+			android:layout_height="45sp"
+			android:id="@+id/yesToAdd"
+			android:text="确认添加"
+			android:layout_gravity="center_vertical"
+			android:background="@android:color/holo_purple"
+			/>
+</LinearLayout>

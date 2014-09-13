@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<style name="back_color">
+		<item name="android:colorBackgroundCacheHint">#2c82c9</item>
+		<item name="android:colorBackground">#2cc990</item>
+		<item name="android:color">#fc6042</item>
+	</style>
+</resources>
