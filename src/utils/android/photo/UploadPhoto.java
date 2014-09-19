@@ -14,6 +14,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import com.example.moment.Index;
 import com.example.moment.R;
+import utils.ImageLoader;
 import utils.PartFactory;
 import utils.android.CameraActivity;
 import utils.internet.CheckInternetTool;
@@ -23,6 +24,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.util.HashMap;
 
 /**
  * Created by Administrator on 2014/9/2.
@@ -40,14 +42,28 @@ public class UploadPhoto extends Activity {
 	private byte[] start;
 	private byte[] first;
 	private byte[] end;
-
-
+	private Intent intent;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		setContentView(R.layout.upload);
-		photoPath = getIntent().getStringExtra("photo_path");
+		intent = getIntent();
+		// 得到照片的路径
+		photoPath = intent.getStringExtra("photo_path");
+		// 得到从 本地获取到的所有图片路径
+		// 注意：本HashMap中的key为图片在屏幕上的位置0-size，
+		// 因此在找路径的时候可能或混淆
+		HashMap<Integer, String> hashMap = (HashMap<Integer, String>) intent.getSerializableExtra("selectMessage");
+		// 目前这样处理起来好像很费时间，算法有待改进
+		int length = ImageLoader.selected.size();
+		for(int i = 0; i < length; i++){
+			if(hashMap.containsKey(i)){
+				// 此方法将得到图片的绝对路径，不包含由程序生成缩略图文件夹
+				System.out.println("----  " + hashMap.get(i));
+			}
+		}
+
 		System.out.println("路径是: " + photoPath);
 		if(photoPath != null){
 			try {

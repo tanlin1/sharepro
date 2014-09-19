@@ -71,7 +71,7 @@ public class ImageLoader {
 		photoEachWidth = (MainActivity.screenWidth - 8 * 3) / 3;
 		photoPath = getImagePath();
 		sortPhotoPathByTime(photoPath);
-		initPhotoSelect();
+		initPhotoSelect(false);
 		new LoadImageThread().start();
 	}
 
@@ -208,13 +208,13 @@ public class ImageLoader {
 		photoPathListLength = list.size();
 		return list;
 	}
-
-	private void initPhotoSelect() {
+	// 为后面的全选提供接口
+	public static void initPhotoSelect(boolean flag) {
 		// 初始化 map 长度
 		selected = new HashMap<Integer, Boolean>(photoPath.size());
 		for (int i = 0; i < photoPath.size(); i++) {
 			// 初始状态均为没有选中
-			selected.put(i, false);
+			selected.put(i, flag);
 		}
 	}
 	private void sortPhotoPathByTime(ArrayList<String> list){

@@ -25,7 +25,10 @@ import utils.android.photo.UploadPhoto;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Locale;
 
 
 /**
@@ -163,24 +166,63 @@ public class CameraActivity extends Activity {
 		});
 	}
 
+	// 已被选中的 图片（此时应该叫做缩略图） <图片位置，该图片所对应的路径>
+	public static HashMap<Integer, String> photoSelectFlagMap = new HashMap<Integer, String>();
+
 	/**
 	 * 用GridView显示多张图片
 	 */
+	// 全选之后，就不用通过每张图片去获取了，直接遍历整个标志ImageLoader.selected Map
+	// 直接装入传递map中，发送给另一个Activity
+	private boolean refresh = false;
 	private void handleSendMultipleImages() {
 		ArrayList<String> imageUris = ImageLoader.photoPath;
+
 		if (imageUris != null) {
 			gridAdapter = new GridAdapter(this, imageUris);
-			View addLocalPhoto = View.inflate(this, R.layout.multyimage, null);
+			final View addLocalPhoto = View.inflate(this, R.layout.multyimage, null);
 			final GridView gridView = (GridView) addLocalPhoto.findViewById(R.id.gridView);
 
+			Button selectAll = (Button) addLocalPhoto.findViewById(R.id.photo_select_all);
+			Button confirm = (Button) addLocalPhoto.findViewById(R.id.add_photo_confirm);
 
-			Button confirm = (Button) addLocalPhoto.findViewById(R.id.ad_photo_confirm);
-
+			selectAll.setOnClickListener(new Button.OnClickListener() {
+				int buttonOnClick = 0;
+				boolean all = true;
+				@Override
+				public void onClick(View v) {
+					refresh = true;
+					if(buttonOnClick % 2 == 0){
+						all = true;
+					}else {
+						all = false;
+					}
+					ImageLoader.initPhotoSelect(all);
+					gridAdapter.notifyDataSetChanged();
+					buttonOnClick++;
+				}
+			});
 			confirm.setOnClickListener(new Button.OnClickListener() {
 				@Override
 				public void onClick(View v) {
-					//System.out.println("----------------" + gridView.getCheckedItemCount());
-					startActivity(new Intent(CameraActivity.this, UploadPhoto.class));
+					Intent confirmUpload = new Intent(CameraActivity.this, UploadPhoto.class);
+					// 只要全选按钮被点击，就应该刷新一遍
+					if(refresh){
+						// 这样的目的是：在for循环中，不需要每次都获取map的长度，相对提高效率
+						int length = ImageLoader.selected.size();
+						for(int i = 0; i < length; i++){
+							boolean shouldPut = ImageLoader.selected.get(i);
+							// 全选
+							if(shouldPut){
+								photoSelectFlagMap.put(i,ImageLoader.photoPath.get(i));
+							}else {
+							//取消全选
+								photoSelectFlagMap.remove(i);
+							}
+						}
+					}
+					confirmUpload.putExtra("selectMessage", photoSelectFlagMap);
+					startActivity(confirmUpload);
 				}
 			});
 			// 设置 适配器
@@ -191,12 +233,19 @@ public class CameraActivity extends Activity {
 				@Override
 				public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 					boolean testFlag = ImageLoader.selected.get(position);
+					// 原来没被选中，点击之后应该是被选中状态
+					// 将此 Position 添加至 photoSelectFlagList中
 					if (!testFlag) {
 						ImageLoader.selected.put(position, true);
 						view.setBackgroundColor(Color.DKGRAY);
+						// 添加
+						photoSelectFlagMap.put(position, ImageLoader.photoPath.get(position));
+						System.out.println("put already---" + position);
 					} else {
 						ImageLoader.selected.put(position, false);
 						view.setBackgroundColor(Color.WHITE);
+						// 从HashMap 中移除响应项
+						photoSelectFlagMap.remove(position);
 					}
 					System.out.println("第" + position + "现在处于选中状态？" + ImageLoader.selected.get(position));
 				}
