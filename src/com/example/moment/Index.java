@@ -133,9 +133,9 @@ public class Index extends Activity {
 		if (firstY - lastPositionY_1 > 20 && secondY - lastPositionY_2 > 20) {
 			//打开图库
 			open.putExtra("what", "picture");
+			imageLoader.enable();
 		}
 		//开启线程（读取图片）
-		imageLoader.enable();
 		startActivity(open);
 	}
 	//主界面的按钮触发

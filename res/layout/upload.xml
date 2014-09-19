@@ -98,7 +98,7 @@
 				android:background="#ffffff"
 				android:layout_marginTop="10dp"
 				android:textColor="@android:color/background_dark"
-				android:textSize="15sp"
+				android:textSize="20sp"
 				/>
 
 			<TextView
@@ -120,7 +120,7 @@
 					android:textSize="20sp"
 					android:layout_gravity="bottom"
 					android:layout_marginBottom="2dp"
-					android:layout_marginLeft="50dp"
+					android:layout_marginLeft="45dp"
 					/>
 
 	</FrameLayout>

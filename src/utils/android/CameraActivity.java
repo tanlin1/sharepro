@@ -25,10 +25,7 @@ import utils.android.photo.UploadPhoto;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.Locale;
+import java.util.*;
 
 
 /**
@@ -102,6 +99,15 @@ public class CameraActivity extends Activity {
 
 		} else if (select.equals("picture")) {
 			//选择图片上传
+
+//			Intent intent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+//			intent.setType("image/*");
+//			startActivityForResult(Intent.createChooser(intent, "Pick any photo"), PICTURE_ASK);
+
+//			Intent picture = new Intent();
+//			picture.setType("image/*");
+//			picture.setAction(Intent.ACTION_GET_CONTENT);
+//			startActivityForResult(picture, PICTURE_ASK);
 			handleSendMultipleImages();
 		}
 	}
@@ -113,16 +119,25 @@ public class CameraActivity extends Activity {
 		Bitmap bitmap;
 		post = (Button) findViewById(R.id.camera_button_photo_direct_post);
 		beauty = (Button) findViewById(R.id.camera_button_handle_photo);
+		ImageView imageView = (ImageView) findViewById(R.id.camera_photo_scanning);
+
 		//成功（虽然Intent为空，那是因为我们指定了保存路径，Intent返回的是一个内容提供者Content）
 		if (resultCode == Activity.RESULT_OK && requestCode == CAMERA_ASK) {
 			//提交原图
 			path = directory + "/" + photoName;
-			bitmap = BitmapFactory.decodeFile(path);
-			((ImageView) findViewById(R.id.camera_photo_scanning)).setImageBitmap(bitmap);
-
+			System.out.println(path + "-------------------------------");
+			BitmapFactory.Options options = new BitmapFactory.Options();
+			options.inSampleSize = 2;
+			bitmap = BitmapFactory.decodeFile(path, options);
+			while (bitmap == null || imageView == null){
+				System.out.println("************ null ********");
+			}
+			imageView.setImageBitmap(bitmap);
+			System.out.println("this is running");
 		}
 		if (resultCode == Activity.RESULT_OK && requestCode == PICTURE_ASK) {
 			sendMessage("selected", "yes");
+			System.out.println("I'm In the pro");
 		}
 		final String sendPath = path;
 		post.setOnClickListener(new View.OnClickListener() {
@@ -152,24 +167,53 @@ public class CameraActivity extends Activity {
 	 * 用GridView显示多张图片
 	 */
 	private void handleSendMultipleImages() {
-		ArrayList<String> imageUris = ImageLoader.list;
+		ArrayList<String> imageUris = ImageLoader.photoPath;
 		if (imageUris != null) {
 			gridAdapter = new GridAdapter(this, imageUris);
-			View v = View.inflate(this, R.layout.multyimage, null);
-			GridView gridView = (GridView) v.findViewById(R.id.gridView);
-			gridView.setPadding(0, 2, 0, 0);
+			View addLocalPhoto = View.inflate(this, R.layout.multyimage, null);
+			final GridView gridView = (GridView) addLocalPhoto.findViewById(R.id.gridView);
+
+
+			Button confirm = (Button) addLocalPhoto.findViewById(R.id.ad_photo_confirm);
+
+			confirm.setOnClickListener(new Button.OnClickListener() {
+				@Override
+				public void onClick(View v) {
+					//System.out.println("----------------" + gridView.getCheckedItemCount());
+					startActivity(new Intent(CameraActivity.this, UploadPhoto.class));
+				}
+			});
 			// 设置 适配器
 			gridView.setAdapter(gridAdapter);
-			setContentView(v);
+			setContentView(addLocalPhoto);
 
 			gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 				@Override
 				public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-					System.out.println(position + "被点击" + view.getId());
-					view.setBackgroundColor(Color.BLUE);
+					boolean testFlag = ImageLoader.selected.get(position);
+					if (!testFlag) {
+						ImageLoader.selected.put(position, true);
+						view.setBackgroundColor(Color.DKGRAY);
+					} else {
+						ImageLoader.selected.put(position, false);
+						view.setBackgroundColor(Color.WHITE);
+					}
+					System.out.println("第" + position + "现在处于选中状态？" + ImageLoader.selected.get(position));
 				}
 			});
-			gridView.setOnScrollListener(new AbsListView.OnScrollListener() {
+
+			gridView.setOnItemSelectedListener(new GridView.OnItemSelectedListener() {
+				@Override
+				public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+					System.out.println("选项 状态改变");
+				}
+
+				@Override
+				public void onNothingSelected(AdapterView<?> parent) {
+					System.out.println("最开始应该是调用此方法--------------------");
+				}
+			});
+			gridView.setOnScrollListener(new GridView.OnScrollListener() {
 				@Override
 				public void onScrollStateChanged(AbsListView view, int scrollState) {
 					switch (scrollState) {
@@ -179,9 +223,9 @@ public class CameraActivity extends Activity {
 							try {
 								// 如果队列中为空，向碎裂中添加数据（新需加载的位置信息）
 								if (ImageLoader.FlagQueue.peek() == null) {
-									HashMap<String,Integer> hashMap = new HashMap<String, Integer>();
-									hashMap.put("start", start - 7);
-									hashMap.put("end", end + 7);
+									HashMap<String, Integer> hashMap = new HashMap<String, Integer>();
+									hashMap.put("start", start - 3);
+									hashMap.put("end", end + 3);
 									ImageLoader.FlagQueue.put(hashMap);
 								}
 							} catch (InterruptedException e) {
@@ -207,7 +251,9 @@ public class CameraActivity extends Activity {
 					start = firstVisibleItem;
 					end = start + visibleItemCount;
 				}
-				});
+			});
+		} else {
+			System.out.println("图片内读取异常");
 		}
 	}
 
@@ -246,15 +292,24 @@ public class CameraActivity extends Activity {
 
 			View view;
 			ImageView image;
+			boolean select;
 			view = View.inflate(context, R.layout.items, null);
 
 			image = (ImageView) view.findViewById(R.id.image);
+			select = ImageLoader.selected.get(position);
+
 			image.setMinimumHeight(width);
 			image.setMinimumWidth(width);
+			// 图片间距
 			image.setPadding(3, 2, 3, 2);
-
+			// 为新建的image 添加图片资源
 			image.setImageBitmap(ImageLoader.hashBitmaps.get(position));
-
+			// 被选中的状态
+			if (select) {
+				view.setBackgroundColor(Color.DKGRAY);
+			} else {
+				view.setBackgroundColor(Color.WHITE);
+			}
 			return view;
 		}
 	}
@@ -263,6 +318,9 @@ public class CameraActivity extends Activity {
 		@Override
 		public void handleMessage(Message msg) {
 			Bundle data = msg.getData();
+			if ("error".equals(data.getString("load"))) {
+				System.out.println("******************** 指定文件夹不存在！ 请检查！");
+			}
 			if ("yes".equals(data.getString("notify"))) {
 				data.clear();
 				gridAdapter.notifyDataSetChanged();
@@ -270,6 +328,7 @@ public class CameraActivity extends Activity {
 		}
 	};
 
+	// 提供发消息方法，通知当前线程（主线程）
 	public static void sendMessage(String key, String value) {
 		Bundle data = new Bundle();
 		Message msg = new Message();

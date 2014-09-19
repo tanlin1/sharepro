@@ -3,7 +3,6 @@ package utils.android.photo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
-import android.location.Location;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -12,6 +11,7 @@ import java.io.IOException;
  * Created by Administrator on 2014/9/3.
  */
 public class ImageCompressUtil {
+
 	public static Bitmap compressByQuality(String path, int maxSize){
 
 		Bitmap bitmap = BitmapFactory.decodeFile(path);
@@ -72,28 +72,7 @@ public class ImageCompressUtil {
 		// 缩放图片动作
 		matrix.postScale(scaleWidth, scaleHeight);
 		bitmap = Bitmap.createBitmap(oldBitmap, 0, 0, (int) width, (int) height, matrix, true);
-		ByteArrayOutputStream baos1 = new ByteArrayOutputStream();
-		bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos1);
-
 		oldBitmap.recycle();
 		return bitmap;
-	}
-
-	public static Location updateToNewLocation(Location location) {
-		String latLongString;
-		double lat = 0;
-		double lng=0;
-
-		if (location != null) {
-			lat = location.getLatitude();
-			lng = location.getLongitude();
-			latLongString = "纬度:" + lat + "\n经度:" + lng;
-			//System.out.println("经度："+lng+"纬度："+lat);
-		} else {
-			latLongString = "无法获取地理信息，请稍后...";
-		}
-		System.out.println(latLongString);
-		return location;
-
 	}
 }

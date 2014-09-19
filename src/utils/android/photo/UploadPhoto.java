@@ -64,7 +64,6 @@ public class UploadPhoto extends Activity {
 		liner = (LinearLayout) findViewById(R.id.liner);
 		ViewGroup.LayoutParams pq = liner.getLayoutParams();
 
-		//Bitmap bm = ImageCompressUtil.compressBySize(photoPath,160,120);
 		Bitmap bm = ImageCompressUtil.zoomImage(BitmapFactory.decodeFile(photoPath),120,90);
 
 		for(int i = 0; i < 20; i++)
